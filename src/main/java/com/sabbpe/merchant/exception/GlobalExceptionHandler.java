@@ -120,6 +120,40 @@ public class GlobalExceptionHandler {
                 .body(response);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(
+            IllegalArgumentException ex, WebRequest request) {
+
+        logger.error("Illegal argument exception: {}", ex.getMessage());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "FAILURE");
+        response.put("errorCode", "INVALID_ARGUMENT");
+        response.put("message", ex.getMessage());
+        response.put("timestamp", System.currentTimeMillis());
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(response);
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, Object>> handleRuntimeException(
+            RuntimeException ex, WebRequest request) {
+
+        logger.error("Runtime exception: {}", ex.getMessage(), ex);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "FAILURE");
+        response.put("errorCode", "RUNTIME_ERROR");
+        response.put("message", ex.getMessage());
+        response.put("timestamp", System.currentTimeMillis());
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(response);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<EasebuzzPaymentResponse> handleGenericException(
             Exception ex, WebRequest request) {

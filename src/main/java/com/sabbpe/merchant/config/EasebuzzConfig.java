@@ -7,6 +7,8 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "easebuzz")
 public class EasebuzzConfig {
 
+    private String key;
+    private String salt;
     private UrlConfig url = new UrlConfig();
     private int timeout = 5000;
     private String surl = "http://localhost:8080/payment/easebuzz/callback";
@@ -35,6 +37,22 @@ public class EasebuzzConfig {
     }
 
     // Getters and Setters
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    public String getSalt() {
+        return salt;
+    }
+
+    public void setSalt(String salt) {
+        this.salt = salt;
+    }
+
     public UrlConfig getUrl() {
         return url;
     }

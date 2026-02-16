@@ -17,6 +17,7 @@ import com.sabbpe.merchant.repository.EasebuzzPaymentRepository;
 import com.sabbpe.merchant.repository.MerchantRepository;
 import com.sabbpe.merchant.repository.TransactionRepository;
 import com.sabbpe.merchant.util.HashUtil;
+import com.sabbpe.merchant.util.EasebuzzHashUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -55,6 +56,9 @@ public class PaymentService {
 
     @Autowired
     private EasebuzzConfig easebuzzConfig;
+
+    @Autowired
+    private EasebuzzHashUtil easebuzzHashUtil;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -150,17 +154,23 @@ public class PaymentService {
     }
 
     /**
-     * Initiates Easebuzz payment
+     * Initiates Easebuzz payment with correct hash generation
      * 
      * @param request EasebuzzPaymentInitiateRequest with amount, productInfo, firstname, email, phone
-     * @param merchantId The merchant ID extracted from JWT token
+     * @param merchantId The merchant ID extracted from database
+     * @param internalToken The internal transaction token for tracking
      * @return EasebuzzPaymentResponse with payment URL
      * @throws MerchantNotFoundException if merchant not found or not active
      * @throws GatewayException if Easebuzz API call fails
      */
     @Transactional
-    public EasebuzzPaymentResponse initiateEasebuzzPayment(EasebuzzPaymentInitiateRequest request, String merchantId) {
-        logger.info("Initiating Easebuzz payment for merchant: {}, amount: {}", merchantId, request.getAmount());
+    public EasebuzzPaymentResponse initiateEasebuzzPayment(
+            EasebuzzPaymentInitiateRequest request, 
+            String merchantId,
+            String internalToken) {
+        
+        logger.info("Initiating Easebuzz payment for merchant: {}, amount: {}, internalToken: {}", 
+                   merchantId, request.getAmount(), internalToken);
 
         // Step 1: Fetch and validate merchant
         Merchant merchant = merchantRepository
@@ -175,21 +185,34 @@ public class PaymentService {
             throw new MerchantNotFoundException("Merchant is not active for ID: " + merchantId);
         }
 
-        // Step 2: Generate transaction ID
-        String txnId = "TXN" + System.currentTimeMillis();
-        logger.debug("Generated txnId: {}", txnId);
+        // Step 2: Generate transaction ID for Easebuzz
+        // Format: Use timestamp for uniqueness
+        String txnId = "TXN" + System.currentTimeMillis() + "_" + merchant.getMerchantId();
+        logger.debug("Generated txnId for Easebuzz: {}", txnId);
 
-        // Step 3: Build hash string for Easebuzz
-        // Hash = SHA512(key|txnid|amount|productinfo|firstname|email|||||||||salt)
-        String hashString = merchant.getMerchantId() + "|" + txnId + "|" + request.getAmount() + "|" +
-                           request.getProductInfo() + "|" + request.getFirstName() + "|" + request.getEmail() +
-                           "|||||||" + merchant.getSaltKey();
-        String hash = HashUtil.generateSHA512(hashString);
-        logger.debug("Generated hash for txnId: {}", txnId);
+        // Step 3: Generate Easebuzz hash with CORRECT format
+        // Format: key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5|||||salt
+        // udf1 = internal_token for tracking in callback
+        String hash = EasebuzzHashUtil.generateHash(
+                easebuzzConfig.getKey(),
+                txnId,
+                request.getAmount().toString(),
+                request.getProductInfo(),
+                request.getFirstName(),
+                request.getEmail(),
+                internalToken,  // udf1: internal_token for tracking
+                "",              // udf2: empty
+                "",              // udf3: empty
+                "",              // udf4: empty
+                "",              // udf5: empty
+                easebuzzConfig.getSalt()
+        );
+        
+        logger.debug("Generated Easebuzz hash for txnId: {} with internalToken as udf1: {}", txnId, internalToken);
 
         // Step 4: Prepare form data for Easebuzz API
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-        formData.add("key", merchant.getMerchantId());
+        formData.add("key", easebuzzConfig.getKey());
         formData.add("txnid", txnId);
         formData.add("amount", request.getAmount().toString());
         formData.add("productinfo", request.getProductInfo());
@@ -199,43 +222,71 @@ public class PaymentService {
         formData.add("surl", easebuzzConfig.getSurl());
         formData.add("furl", easebuzzConfig.getFurl());
         formData.add("hash", hash);
+        
+        // Add UDF fields - udf1 contains internal_token for tracking
+        formData.add("udf1", internalToken);
+        
+        logger.debug("Easebuzz request payload prepared with txnid: {}, amount: {}, hash: {}...", 
+                    txnId, request.getAmount(), hash.substring(0, Math.min(20, hash.length())));
 
         // Step 5: Call Easebuzz initiate API
         String initiateUrl = easebuzzConfig.getUrl().getInitiate();
-        logger.info("Calling Easebuzz initiate API: {}", initiateUrl);
+        logger.info("Calling Easebuzz initiate API at: {}", initiateUrl);
 
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            headers.set("Accept", "application/json");
+            
             HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(formData, headers);
 
             ResponseEntity<Map> response = restTemplate.postForEntity(initiateUrl, requestEntity, Map.class);
             Map<String, Object> responseBody = response.getBody();
 
-            logger.info("Easebuzz API response status: {}, body: {}", response.getStatusCode(), responseBody);
+            logger.info("Easebuzz API response status code: {}", response.getStatusCode());
+            logger.debug("Easebuzz API response body: {}", responseBody);
 
-            // Step 6: Validate response
-            if (responseBody == null || responseBody.get("status") == null) {
-                logger.error("Invalid Easebuzz response: missing status");
-                throw new GatewayException("Invalid Easebuzz response format", 502);
+            // Step 6: Validate response format
+            if (responseBody == null) {
+                logger.error("Easebuzz returned null response body for txnId: {}", txnId);
+                throw new GatewayException("Invalid Easebuzz response: empty body", 502);
+            }
+            
+            if (!responseBody.containsKey("status")) {
+                logger.error("Easebuzz response missing status field. Response: {}", responseBody);
+                throw new GatewayException("Invalid Easebuzz response format: missing status", 502);
             }
 
+            // Step 7: Check response status
+            // Easebuzz returns: status = 1 (success), 0 (failure)
             Object statusObj = responseBody.get("status");
             int status = statusObj instanceof Integer ? (Integer) statusObj : 
                         Integer.parseInt(statusObj.toString());
 
             if (status != 1) {
-                logger.error("Easebuzz API failed with status: {}", status);
-                throw new GatewayException("Easebuzz payment initiation failed with status: " + status, 502);
+                String errorMessage = responseBody.get("message") != null ? 
+                                    responseBody.get("message").toString() : "Unknown error";
+                logger.error("Easebuzz payment initiation failed with status: {}, message: {}", status, errorMessage);
+                throw new GatewayException("Easebuzz API returned status " + status + ": " + errorMessage, 502);
             }
 
-            String accessKey = responseBody.get("data") != null ? responseBody.get("data").toString() : null;
-            if (accessKey == null) {
-                logger.error("Easebuzz response missing access key");
-                throw new GatewayException("Easebuzz response missing access key", 502);
+            // Step 8: Extract access key (payment URL identifier)
+            String accessKey = null;
+            if (responseBody.containsKey("data")) {
+                Object dataObj = responseBody.get("data");
+                if (dataObj != null) {
+                    accessKey = dataObj.toString();
+                }
+            }
+            
+            if (accessKey == null || accessKey.trim().isEmpty()) {
+                logger.error("Easebuzz response missing or empty data field. Response: {}", responseBody);
+                throw new GatewayException("Easebuzz response missing payment URL data", 502);
             }
 
-            // Step 7: Save transaction in database
+            logger.info("Easebuzz payment initiation successful for txnId: {}, accessKey: {}", txnId, accessKey);
+
+            // Step 9: Save Easebuzz payment record
             String rawResponse = objectMapper.writeValueAsString(responseBody);
             EasebuzzPayment payment = new EasebuzzPayment();
             payment.setTxnId(txnId);
@@ -248,23 +299,27 @@ public class PaymentService {
             payment.setRawResponse(rawResponse);
 
             easebuzzPaymentRepository.save(payment);
-            logger.info("Payment transaction saved in database with txnId: {}", txnId);
+            logger.info("EasebuzzPayment record saved in database with txnId: {}", txnId);
 
-            // Step 8: Return payment URL
+            // Step 10: Build and return payment URL
             String paymentUrl = easebuzzConfig.getUrl().getPayment() + accessKey;
             logger.info("Payment URL generated: {}", paymentUrl);
 
-           return EasebuzzPaymentResponse.error("FAILED", "Invalid hash", "HASH_ERROR");
-
+            return EasebuzzPaymentResponse.builder()
+                .status("SUCCESS")
+                .message("Payment URL generated successfully")
+                .paymentUrl(paymentUrl)
+                .txnId(txnId)
+                .build();
 
         } catch (GatewayException e) {
-            logger.error("Gateway exception: {}", e.getMessage(), e);
+            logger.error("GatewayException during Easebuzz payment initiation for txnId: {}, error: {}", txnId, e.getMessage(), e);
             throw e;
         } catch (JsonProcessingException e) {
-            logger.error("JSON processing error: {}", e.getMessage(), e);
-            throw new GatewayException("Error processing Easebuzz response", 502, e);
+            logger.error("JSON processing error while handling Easebuzz response for txnId: {}", txnId, e);
+            throw new GatewayException("Error processing Easebuzz response: " + e.getMessage(), 502, e);
         } catch (Exception e) {
-            logger.error("Unexpected error during payment initiation: {}", e.getMessage(), e);
+            logger.error("Unexpected error during Easebuzz payment initiation for txnId: {}, error: {}", txnId, e.getMessage(), e);
             throw new GatewayException("Payment initiation failed: " + e.getMessage(), 502, e);
         }
     }
@@ -297,10 +352,10 @@ public class PaymentService {
                 return false;
             }
 
-            // Fetch merchant using key
+            // Fetch merchant using merchant_id from Easebuzz callback
             Merchant merchant = merchantRepository
                 .findByMerchantId(key)
-                .orElseThrow(() -> new MerchantNotFoundException("Merchant not found for key: " + key));
+                .orElseThrow(() -> new MerchantNotFoundException("Merchant not found for ID: " + key));
 
             // Fetch or create payment record
             EasebuzzPayment payment = easebuzzPaymentRepository.findByTxnId(txnId)
@@ -313,14 +368,21 @@ public class PaymentService {
                     return newPayment;
                 });
 
-            // Build reverse hash for verification
-            // reverse_hash = SHA512(salt|status||||||||email|firstname|productinfo|amount|txnid|key)
-            String reverseHashString = merchant.getSaltKey() + "|" + status + "||||||||" +
-                                      email + "|" + firstname + "|" + productinfo + "|" +
-                                      amount + "|" + txnId + "|" + merchant.getMerchantId();
-            String calculatedHash = HashUtil.generateSHA512(reverseHashString);
+            // Build reverse hash for verification (CORRECT FORMAT)
+            // Format: salt|status||||||||email|firstname|productinfo|amount|txnid|key
+            String calculatedHash = EasebuzzHashUtil.generateReverseHash(
+                    merchant.getSaltKey(),
+                    status,
+                    email,
+                    firstname,
+                    productinfo,
+                    amount,
+                    txnId,
+                    key
+            );
 
-            logger.debug("Hash validation - received: {}, calculated: {}", hash, calculatedHash);
+            logger.debug("Hash validation for txnId: {} - received: {}, calculated: {}", 
+                        txnId, hash, calculatedHash);
 
             boolean hashValid = hash != null && hash.equals(calculatedHash);
             payment.setHashValidated(hashValid);
@@ -397,6 +459,77 @@ public class PaymentService {
             payment.getNormalizedStatus(),
             payment.getGatewayStatus()
         );
+    }
+
+    /**
+     * Gets payment URL for a transaction using internal token
+     * 
+     * @param request PaymentUrlRequest containing internal token and payment details
+     * @return PaymentUrlResponse with payment URL from Easebuzz
+     * @throws ValidationException if transaction not found or invalid
+     * @throws GatewayException if Easebuzz API call fails
+     */
+    @Transactional
+    public PaymentUrlResponse getPaymentUrl(PaymentUrlRequest request) {
+        logger.info("Getting payment URL for internal token: {}", request.getInternalToken());
+
+        // Step 1: Find transaction by internal token
+        Transaction transaction = transactionRepository
+            .findByInternalToken(request.getInternalToken())
+            .orElseThrow(() -> {
+                logger.warn("Transaction not found for token: {}", request.getInternalToken());
+                return new ValidationException("Transaction not found for token: " + request.getInternalToken());
+            });
+
+        logger.debug("Transaction found - orderId: {}, amount: {}", transaction.getOrderId(), transaction.getAmount());
+
+        // Step 2: Prepare Easebuzz payment request
+        EasebuzzPaymentInitiateRequest easebuzzRequest = new EasebuzzPaymentInitiateRequest();
+        easebuzzRequest.setAmount(transaction.getAmount());
+        easebuzzRequest.setProductInfo(request.getProductInfo());
+        easebuzzRequest.setFirstName(request.getFirstName());
+        easebuzzRequest.setEmail(request.getEmail());
+        easebuzzRequest.setPhone(request.getPhone());
+
+        // Step 3: Call Easebuzz payment initiation with internal token
+        try {
+            EasebuzzPaymentResponse easebuzzResponse = initiateEasebuzzPayment(
+                    easebuzzRequest, 
+                    transaction.getMerchantId(),
+                    request.getInternalToken()  // Pass internal token for Easebuzz tracking
+            );
+
+            logger.info("Payment URL obtained successfully for orderId: {}, internalToken: {}", 
+                       transaction.getOrderId(), request.getInternalToken());
+
+            return PaymentUrlResponse.builder()
+                .status("SUCCESS")
+                .paymentUrl(easebuzzResponse.getPaymentUrl())
+                .txnId(easebuzzResponse.getTxnId())
+                .orderId(transaction.getOrderId())
+                .message("Payment URL generated successfully")
+                .timestamp(System.currentTimeMillis())
+                .build();
+
+        } catch (GatewayException e) {
+            logger.error("Gateway error while getting payment URL for internalToken: {}, error: {}", 
+                        request.getInternalToken(), e.getMessage(), e);
+            return PaymentUrlResponse.builder()
+                .status("FAILED")
+                .message(e.getMessage())
+                .errorCode("GATEWAY_ERROR")
+                .timestamp(System.currentTimeMillis())
+                .build();
+        } catch (Exception e) {
+            logger.error("Unexpected error getting payment URL for internalToken: {}, error: {}", 
+                        request.getInternalToken(), e.getMessage(), e);
+            return PaymentUrlResponse.builder()
+                .status("FAILED")
+                .message(e.getMessage())
+                .errorCode("INTERNAL_ERROR")
+                .timestamp(System.currentTimeMillis())
+                .build();
+        }
     }
 
     /**

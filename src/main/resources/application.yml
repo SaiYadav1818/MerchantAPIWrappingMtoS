@@ -1,15 +1,18 @@
 spring:
   application:
     name: merchant-api-wrapper
+
   datasource:
     url: jdbc:h2:mem:testdb
     username: sa
     password:
     driver-class-name: org.h2.Driver
+
   h2:
     console:
       enabled: true
       path: /h2-console
+
   jpa:
     hibernate:
       ddl-auto: create
@@ -19,9 +22,11 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
         format_sql: true
+
   jackson:
     serialization:
       write-dates-as-timestamps: false
+
 
 logging:
   level:
@@ -30,15 +35,24 @@ logging:
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
 
-easebuzz:
-  url:
-    initiate: https://testpay.easebuzz.in/payment/initiate
-    payment: https://testpay.easebuzz.in/pay/
-  timeout: 5000
-  surl: http://localhost:8080/payment/easebuzz/callback
-  furl: http://localhost:8080/payment/easebuzz/callback
 
 server:
   port: 8080
   servlet:
     context-path: /
+
+
+easebuzz:
+  # Will use ENV variable if present,
+  # otherwise fallback to default test credentials
+  key: ${EASEBUZZ_KEY:ZF93ZSH6B}
+  salt: ${EASEBUZZ_SALT:2Y1MFHGIB}
+
+  url:
+    initiate: https://testpay.easebuzz.in/payment/initiateLink
+    payment: https://testpay.easebuzz.in/pay/
+
+  timeout: 5000
+
+  surl: http://localhost:8080/api/payment/easebuzz/callback/success
+  furl: http://localhost:8080/api/payment/easebuzz/callback/failure
