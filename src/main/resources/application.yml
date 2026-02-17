@@ -27,6 +27,11 @@ spring:
     serialization:
       write-dates-as-timestamps: false
 
+  thymeleaf:
+    cache: false
+    mode: HTML
+    encoding: UTF-8
+
 
 logging:
   level:

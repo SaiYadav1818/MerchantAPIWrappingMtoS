@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Gateway Test Form</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-card {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .form-card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+            font-size: 1.5em;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.95em;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-success {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-failure {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-failure:hover {
+            background: #da190b;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.3);
+        }
+
+        .btn-reset {
+            background: #9e9e9e;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #757575;
+            transform: translateY(-2px);
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #667eea;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .info-section {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+
+        .info-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .info-section p {
+            color: #666;
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .info-section ul {
+            margin-left: 20px;
+            color: #666;
+            line-height: 1.8;
+        }
+
+        .info-section code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #d32f2f;
+        }
+
+        .copy-button {
+            background: #2196F3;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .copy-button:hover {
+            background: #0b7dda;
+        }
+
+        .hidden-fields {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #666;
+            display: none;
+        }
+
+        .hidden-fields.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .tab-buttons {
+                flex-direction: column;
+            }
+
+            .form-card {
+                padding: 20px;
+            }
+        }
+
+        .success-badge {
+            display: inline-block;
+            background: #4CAF50;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+
+        .failure-badge {
+            display: inline-block;
+            background: #f44336;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Payment Gateway Redirect Test</h1>
+            <p>Simulate Easebuzz payment responses to test your implementation</p>
+        </div>
+
+        <div class="content">
+            <!-- Success Form -->
+            <div class="form-card">
+                <h2>✓ Success Payment <span class="success-badge">Test</span></h2>
+                <form action="http://localhost:8080/payment/success" method="POST">
+                    <div class="form-group">
+                        <label for="txnid_success">Transaction ID *</label>
+                        <input type="text" id="txnid_success" name="txnid" value="TXN123456789" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status_success">Status *</label>
+                        <select id="status_success" name="status" required>
+                            <option value="success">success</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="amount_success">Amount *</label>
+                        <input type="number" id="amount_success" name="amount" value="100.00" step="0.01" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="easepayid_success">Easepay ID</label>
+                        <input type="text" id="easepayid_success" name="easepayid" value="EP1234567890">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="hash_success">Hash (SHA-512)</label>
+                        <input type="text" id="hash_success" name="hash" value="a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="firstname_success">First Name</label>
+                        <input type="text" id="firstname_success" name="firstname" value="John">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email_success">Email</label>
+                        <input type="email" id="email_success" name="email" value="john@example.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="productinfo_success">Product Info</label>
+                        <input type="text" id="productinfo_success" name="productinfo" value="Premium Subscription">
+                    </div>
+
+                    <div class="hidden-fields" id="hiddenFieldsSuccess">
+                        <p><strong>Additional Fields (optional):</strong></p>
+                        <input type="text" name="mode" value="CC" placeholder="Payment Mode (CC/NB/DC)">
+                        <input type="text" name="bankname" value="HDFC Bank" placeholder="Bank Name">
+                        <input type="text" name="cardname" value="Visa" placeholder="Card Name">
+                        <input type="text" name="udf1" value="Custom Value 1" placeholder="UDF1">
+                    </div>
+
+                    <div class="button-group">
+                        <button type="button" class="btn-reset" onclick="toggleFields('hiddenFieldsSuccess')">+ More Fields</button>
+                        <button type="submit" class="btn-success">Send Success Response</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Failure Form -->
+            <div class="form-card">
+                <h2>✕ Failure Payment <span class="failure-badge">Test</span></h2>
+                <form action="http://localhost:8080/payment/failure" method="POST">
+                    <div class="form-group">
+                        <label for="txnid_failure">Transaction ID *</label>
+                        <input type="text" id="txnid_failure" name="txnid" value="TXN987654321" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status_failure">Status *</label>
+                        <select id="status_failure" name="status" required>
+                            <option value="failure">failure</option>
+                            <option value="cancel">cancel</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="amount_failure">Amount *</label>
+                        <input type="number" id="amount_failure" name="amount" value="50.00" step="0.01" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="easepayid_failure">Easepay ID / Error Code</label>
+                        <input type="text" id="easepayid_failure" name="easepayid" value="ERR_PAYMENT_DECLINED">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="hash_failure">Hash (SHA-512)</label>
+                        <input type="text" id="hash_failure" name="hash" value="f1e2d3c4b5a6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="firstname_failure">First Name</label>
+                        <input type="text" id="firstname_failure" name="firstname" value="Jane">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email_failure">Email</label>
+                        <input type="email" id="email_failure" name="email" value="jane@example.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="productinfo_failure">Product Info</label>
+                        <input type="text" id="productinfo_failure" name="productinfo" value="Standard Plan">
+                    </div>
+
+                    <div class="hidden-fields" id="hiddenFieldsFailure">
+                        <p><strong>Additional Fields (optional):</strong></p>
+                        <input type="text" name="error_message" value="Payment Declined" placeholder="Error Message">
+                        <input type="text" name="udf1" value="Custom Value 1" placeholder="UDF1">
+                    </div>
+
+                    <div class="button-group">
+                        <button type="button" class="btn-reset" onclick="toggleFields('hiddenFieldsFailure')">+ More Fields</button>
+                        <button type="submit" class="btn-failure">Send Failure Response</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Documentation Section -->
+        <div class="info-section">
+            <h3>📋 Payment Gateway Response Parameters</h3>
+            <p><strong>When payment is completed, the gateway will POST these parameters:</strong></p>
+
+            <h4 style="margin-top: 20px; color: #667eea;">Success Response Parameters</h4>
+            <ul>
+                <li><code>txnid</code> - Unique transaction identifier</li>
+                <li><code>status</code> - Payment status (success/failure)</li>
+                <li><code>amount</code> - Transaction amount</li>
+                <li><code>firstname</code> - Customer first name</li>
+                <li><code>email</code> - Customer email address</li>
+                <li><code>phone</code> - Customer phone number</li>
+                <li><code>productinfo</code> - Product or service description</li>
+                <li><code>easepayid</code> - Gateway transaction identifier</li>
+                <li><code>hash</code> - SHA-512 hash for verification</li>
+                <li><code>mode</code> - Payment mode (CC/NB/DC/WALLET)</li>
+                <li><code>bankname</code> - Bank name (if applicable)</li>
+                <li><code>cardname</code> - Card type (if applicable)</li>
+                <li><code>udf1-udf5</code> - Custom user-defined fields</li>
+            </ul>
+
+            <h4 style="margin-top: 20px; color: #f44336;">Failure Response Parameters</h4>
+            <p>Same as success, with <code>status = "failure"</code> or <code>"cancel"</code> and optional <code>error_message</code></p>
+
+            <h4 style="margin-top: 20px; color: #333;">Configuration in Payment Initiation</h4>
+            <p>When initiating payment, configure:</p>
+            <ul>
+                <li><code>surl</code> = <code>http://localhost:8080/payment/success</code></li>
+                <li><code>furl</code> = <code>http://localhost:8080/payment/failure</code></li>
+            </ul>
+
+            <h4 style="margin-top: 20px; color: #333;">cURL Test Commands</h4>
+            <p><strong>Success Test:</strong></p>
+            <code style="display: block; background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 3px; overflow-x: auto;">
+                curl -X POST "http://localhost:8080/payment/success" -d "txnid=TXN123456789" -d "status=success" -d "amount=100.00" -d "easepayid=EP1234567890" -d "firstname=John" -d "email=john@example.com"
+            </code>
+
+            <p><strong>Failure Test:</strong></p>
+            <code style="display: block; background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 3px; overflow-x: auto;">
+                curl -X POST "http://localhost:8080/payment/failure" -d "txnid=TXN987654321" -d "status=failure" -d "amount=50.00" -d "firstname=Jane" -d "email=jane@example.com"
+            </code>
+        </div>
+
+        <div class="info-section" style="background: #e8f5e9; border-left: 4px solid #4CAF50;">
+            <h3 style="color: #2e7d32;">✓ How to Use This Test Form</h3>
+            <ol style="margin-left: 20px; color: #555; line-height: 1.8;">
+                <li>Fill in the payment parameters in either the Success or Failure form</li>
+                <li>Modify the values as needed to test different scenarios</li>
+                <li>Click "Send Success Response" or "Send Failure Response"</li>
+                <li>The form will POST to your local Spring Boot application</li>
+                <li>You'll be redirected to the payment-success.html or payment-failure.html page</li>
+                <li>All parameters will be displayed in the response table</li>
+                <li>Check the application logs for parameter logging</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function toggleFields(fieldId) {
+            const fields = document.getElementById(fieldId);
+            fields.classList.toggle('show');
+        }
+
+        // Pre-fill form with sample data on page load
+        window.addEventListener('load', function() {
+            console.log('Payment Gateway Test Form Loaded');
+            console.log('Test URLs:');
+            console.log('- Success: http://localhost:8080/payment/success');
+            console.log('- Failure: http://localhost:8080/payment/failure');
+        });
+
+        // Validate form before submission
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const txnid = this.querySelector('input[name="txnid"]').value;
+                if (!txnid || txnid.trim() === '') {
+                    e.preventDefault();
+                    alert('Transaction ID is required!');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

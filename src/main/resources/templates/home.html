@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merchant API Wrapper - Payment Gateway</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 50px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+
+        .content {
+            padding: 50px 30px;
+        }
+
+        .intro {
+            color: #333;
+            margin-bottom: 40px;
+            font-size: 1em;
+            line-height: 1.8;
+        }
+
+        .intro h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .feature-card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.15);
+        }
+
+        .feature-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .feature-card p {
+            color: #666;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.05em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #d32f2f;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(244, 67, 54, 0.3);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-outline:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .documentation {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .documentation h3 {
+            color: #1976d2;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .documentation ul {
+            margin-left: 20px;
+            color: #555;
+            line-height: 1.8;
+        }
+
+        .documentation li {
+            margin-bottom: 8px;
+        }
+
+        .documentation code {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #d32f2f;
+            font-family: 'Courier New', monospace;
+        }
+
+        .api-endpoints {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .api-endpoints h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .endpoint {
+            background: white;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+            font-family: 'Courier New', monospace;
+        }
+
+        .endpoint strong {
+            color: #667eea;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e0e0e0;
+            color: #999;
+        }
+
+        .footer p {
+            margin-bottom: 8px;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: #4CAF50;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin-left: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .content {
+                padding: 30px 20px;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏪 Merchant API Wrapper</h1>
+            <p>Easebuzz Payment Gateway Integration</p>
+        </div>
+
+        <div class="content">
+            <div class="intro">
+                <h2>Welcome to Payment Gateway Integration</h2>
+                <p>
+                    This application provides a complete Spring Boot 3.2 implementation for handling payment gateway redirects
+                    with Easebuzz. After payment processing, the gateway redirects users to success or failure pages where all
+                    response parameters are displayed dynamically using Thymeleaf templates.
+                </p>
+            </div>
+
+            <div class="features">
+                <div class="feature-card">
+                    <h3>✓ Success Handler</h3>
+                    <p>Processes successful payment redirects and displays transaction details on a professional success page.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>✕ Failure Handler</h3>
+                    <p>Handles payment failures gracefully with error information and support contact details.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>📊 Dynamic Display</h3>
+                    <p>All payment parameters are displayed dynamically in formatted tables using Thymeleaf loops.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>📝 Logging</h3>
+                    <p>Complete parameter logging with SLF4J for debugging and monitoring payment transactions.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>🎨 Responsive UI</h3>
+                    <p>Professional, mobile-friendly HTML pages with CSS animations and smooth transitions.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>🧪 Test Form</h3>
+                    <p>Built-in test page to simulate payment gateway responses and verify integration locally.</p>
+                </div>
+            </div>
+
+            <div class="api-endpoints">
+                <h3>API Endpoints</h3>
+                <div class="endpoint">
+                    <strong>Success:</strong> POST /payment/success
+                </div>
+                <div class="endpoint">
+                    <strong>Failure:</strong> POST /payment/failure
+                </div>
+                <div class="endpoint">
+                    <strong>Test Form:</strong> GET /test
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <a href="/test" class="btn btn-primary">
+                    🧪 Open Test Form
+                </a>
+                <a href="http://localhost:8080/h2-console" class="btn btn-outline">
+                    💾 H2 Database
+                </a>
+            </div>
+
+            <div class="documentation">
+                <h3>📚 Documentation</h3>
+                <ul>
+                    <li><strong>Implementation Guide:</strong> See PAYMENT_REDIRECT_IMPLEMENTATION.md in project root</li>
+                    <li><strong>Configuration:</strong> application.yml has Thymeleaf settings configured</li>
+                    <li><strong>Templates:</strong> Located in src/main/resources/templates/</li>
+                    <li><strong>Controller:</strong> PaymentRedirectController handles POST redirects</li>
+                    <li><strong>Logging:</strong> Check application logs for parameter details</li>
+                </ul>
+            </div>
+
+            <div class="documentation" style="background: #fff3e0; border-left-color: #ff9800;">
+                <h3 style="color: #e65100;">⚙️ Configuration URLs</h3>
+                <ul>
+                    <li><strong>Success URL (surl):</strong> <code>http://localhost:8080/payment/success</code></li>
+                    <li><strong>Failure URL (furl):</strong> <code>http://localhost:8080/payment/failure</code></li>
+                    <li><strong>Use these URLs</strong> when initiating payment with Easebuzz gateway</li>
+                    <li><strong>For production:</strong> Replace localhost with your domain</li>
+                </ul>
+            </div>
+
+            <div class="documentation" style="background: #f3e5f5; border-left-color: #9c27b0;">
+                <h3 style="color: #6a1b9a;">🚀 Getting Started</h3>
+                <ul>
+                    <li>Build project: <code>mvn clean install</code></li>
+                    <li>Run application: <code>mvn spring-boot:run</code></li>
+                    <li>Open home page: <code>http://localhost:8080</code></li>
+                    <li>Access test form: <code>http://localhost:8080/test</code></li>
+                    <li>Test success redirect and verify parameter display</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p><strong>Merchant API Wrapper v1.0.0</strong></p>
+            <p>Spring Boot 3.2 | Java 21 | Thymeleaf | Easebuzz Integration</p>
+            <p>&copy; 2024 Payment Gateway Solutions. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

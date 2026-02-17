@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: merchant-api-wrapper
+
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+  thymeleaf:
+    cache: false
+    mode: HTML
+    encoding: UTF-8
+
+logging:
+  level:
+    root: WARN
+    com.sabbpe.merchant: DEBUG
