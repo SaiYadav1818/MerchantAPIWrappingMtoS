@@ -166,7 +166,7 @@ public class EasebuzzService {
 
             log.info("Payment initiated successfully. Reference={}", data);
 
-            return new EasebuzzPaymentResponse(status, data);
+            return EasebuzzPaymentResponse.success(null, data);
         }
 
         // ---------------- FAILURE ----------------

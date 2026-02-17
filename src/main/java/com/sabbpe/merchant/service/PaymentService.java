@@ -191,12 +191,26 @@ public class PaymentService {
         logger.debug("Generated txnId for Easebuzz: {}", txnId);
 
         // Step 3: Generate Easebuzz hash with CORRECT format
-        // Format: key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5|||||salt
+        // Format: key|txnid|amount|productinfo|firstname|email|udf1|||||||||salt (5 empty fields)
         // udf1 = internal_token for tracking in callback
+        
+        // Format amount to 2 decimal places
+        String formattedAmount = String.format("%.2f", request.getAmount());
+        
+        String hashInput = String.format("%s|%s|%s|%s|%s|%s|%s|||||||||%s",
+                easebuzzConfig.getKey(),
+                txnId,
+                formattedAmount,
+                request.getProductInfo(),
+                request.getFirstName(),
+                request.getEmail(),
+                internalToken,
+                easebuzzConfig.getSalt());
+        
         String hash = EasebuzzHashUtil.generateHash(
                 easebuzzConfig.getKey(),
                 txnId,
-                request.getAmount().toString(),
+                formattedAmount,
                 request.getProductInfo(),
                 request.getFirstName(),
                 request.getEmail(),
@@ -208,13 +222,14 @@ public class PaymentService {
                 easebuzzConfig.getSalt()
         );
         
+        logger.info("Easebuzz hash input string: {}", hashInput);
         logger.debug("Generated Easebuzz hash for txnId: {} with internalToken as udf1: {}", txnId, internalToken);
 
         // Step 4: Prepare form data for Easebuzz API
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
         formData.add("key", easebuzzConfig.getKey());
         formData.add("txnid", txnId);
-        formData.add("amount", request.getAmount().toString());
+        formData.add("amount", formattedAmount);
         formData.add("productinfo", request.getProductInfo());
         formData.add("firstname", request.getFirstName());
         formData.add("email", request.getEmail());
@@ -226,8 +241,13 @@ public class PaymentService {
         // Add UDF fields - udf1 contains internal_token for tracking
         formData.add("udf1", internalToken);
         
+        // Log full request map before sending
+        logger.info("Easebuzz full request - key: {}, txnid: {}, amount: {}, productinfo: {}, firstname: {}, email: {}, phone: {}, surl: {}, furl: {}, udf1: {}, hash: {}",
+                easebuzzConfig.getKey(), txnId, formattedAmount, request.getProductInfo(), 
+                request.getFirstName(), request.getEmail(), request.getPhone(),
+                easebuzzConfig.getSurl(), easebuzzConfig.getFurl(), internalToken, hash);
         logger.debug("Easebuzz request payload prepared with txnid: {}, amount: {}, hash: {}...", 
-                    txnId, request.getAmount(), hash.substring(0, Math.min(20, hash.length())));
+                    txnId, formattedAmount, hash.substring(0, Math.min(20, hash.length())));
 
         // Step 5: Call Easebuzz initiate API
         String initiateUrl = easebuzzConfig.getUrl().getInitiate();
@@ -243,6 +263,9 @@ public class PaymentService {
             ResponseEntity<Map> response = restTemplate.postForEntity(initiateUrl, requestEntity, Map.class);
             Map<String, Object> responseBody = response.getBody();
 
+            // Log raw response body from Easebuzz for debugging
+            String rawResponseBody = responseBody != null ? responseBody.toString() : "empty";
+            logger.info("Easebuzz raw response body: {}", rawResponseBody);
             logger.info("Easebuzz API response status code: {}", response.getStatusCode());
             logger.debug("Easebuzz API response body: {}", responseBody);
 
@@ -264,10 +287,18 @@ public class PaymentService {
                         Integer.parseInt(statusObj.toString());
 
             if (status != 1) {
+                // Parse error_desc field for more detailed error information
+                String errorDesc = responseBody.get("error_desc") != null ? 
+                                  responseBody.get("error_desc").toString() : null;
                 String errorMessage = responseBody.get("message") != null ? 
                                     responseBody.get("message").toString() : "Unknown error";
-                logger.error("Easebuzz payment initiation failed with status: {}, message: {}", status, errorMessage);
-                throw new GatewayException("Easebuzz API returned status " + status + ": " + errorMessage, 502);
+                
+                // Use error_desc if available, otherwise use message
+                String finalErrorMessage = (errorDesc != null && !errorDesc.isEmpty()) ? errorDesc : errorMessage;
+                
+                logger.error("Easebuzz payment initiation failed with status: {}, error_desc: {}, message: {}", 
+                           status, errorDesc, errorMessage);
+                throw new GatewayException("Easebuzz API returned status " + status + ": " + finalErrorMessage, 502);
             }
 
             // Step 8: Extract access key (payment URL identifier)
@@ -559,6 +590,24 @@ public class PaymentService {
 
         logger.info("Refund processed for txnId: {}", txnId);
         return true;
+    }
+
+    /**
+     * Validates merchant ownership - ensures JWT token merchant matches request merchant
+     * This prevents cross-merchant access to payment APIs
+     * 
+     * @param tokenMerchantId merchant ID extracted from JWT token
+     * @param requestMerchantId merchant ID from request payload
+     * @throws IllegalArgumentException if merchant IDs don't match
+     */
+    public void validateMerchantOwnership(String tokenMerchantId, String requestMerchantId) {
+        if (!tokenMerchantId.equals(requestMerchantId)) {
+            logger.warn("Merchant ownership validation failed. Token merchant: {}, Request merchant: {}",
+                    tokenMerchantId, requestMerchantId);
+            throw new IllegalArgumentException(
+                    "Access denied: Merchant ID in token does not match request");
+        }
+        logger.debug("Merchant ownership validation successful for merchantId: {}", tokenMerchantId);
     }
 }
 

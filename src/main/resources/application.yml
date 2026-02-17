@@ -27,11 +27,19 @@ spring:
     serialization:
       write-dates-as-timestamps: false
 
+  security:
+    user:
+      password: default
+
 
 logging:
   level:
     root: INFO
     com.sabbpe.merchant: DEBUG
+    # Enable Spring Security debug logging to diagnose 403 errors
+    org.springframework.security: DEBUG
+    org.springframework.security.web.FilterChainProxy: DEBUG
+    org.springframework.security.web.access: DEBUG
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
 
@@ -56,3 +64,17 @@ easebuzz:
 
   surl: http://localhost:8080/api/payment/easebuzz/callback/success
   furl: http://localhost:8080/api/payment/easebuzz/callback/failure
+
+
+# JWT Configuration
+# ✅ CRITICAL: jwt.secret MUST be at least 32 characters for HS256 (256 bits)
+# Use plain text secret (NOT Base64 encoded) - UTF-8 automatic
+# For production, ALWAYS use environment variable: export JWT_SECRET='your-secret-here'
+jwt:
+  # Plain text secret - minimum 32 characters for HS256
+  # ✅ This EXACT secret is used for BOTH signing and validation
+  # Change for each environment (DEV, UAT, PROD)
+  secret: ${JWT_SECRET:MerchantPaymentApiSecret123456789AbcDefGhijklmno}
+  # Token expiration time in milliseconds (86400000 = 24 hours)
+  expiration: ${JWT_EXPIRATION:86400000}
+

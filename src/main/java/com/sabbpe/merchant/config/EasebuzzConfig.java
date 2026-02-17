@@ -15,7 +15,7 @@ public class EasebuzzConfig {
     private String furl = "http://localhost:8080/payment/easebuzz/callback";
 
     public static class UrlConfig {
-        private String initiate = "https://testpay.easebuzz.in/payment/initiate";
+        private String initiate = "https://testpay.easebuzz.in/payment/initiateLink";
         private String payment = "https://testpay.easebuzz.in/pay/";
 
         // Getters and Setters

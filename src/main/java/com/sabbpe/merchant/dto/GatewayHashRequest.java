@@ -1,5 +1,6 @@
 package com.sabbpe.merchant.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,6 +13,7 @@ import java.math.BigDecimal;
  * Request DTO for Easebuzz payload hash generation
  * 
  * Contains the payment details required to generate the Easebuzz payment gateway hash
+ * Supports snake_case JSON field names via @JsonProperty
  */
 @Data
 @NoArgsConstructor
@@ -21,6 +23,7 @@ public class GatewayHashRequest {
 
     @NotBlank(message = "Transaction ID is required")
     @Size(min = 1, max = 100, message = "Transaction ID must be between 1 and 100 characters")
+    @JsonProperty("txn_id")
     private String txnId;
 
     @NotNull(message = "Amount is required")

@@ -78,12 +78,12 @@ public class EasebuzzPaymentController {
         } catch (IllegalArgumentException e) {
             log.error("Invalid request parameter for transaction initiation: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new EasebuzzPaymentResponse(0, null));
+                    .body(EasebuzzPaymentResponse.failure(e.getMessage(), "INVALID_REQUEST"));
 
         } catch (Exception e) {
             log.error("Error initiating payment: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new EasebuzzPaymentResponse(0, null));
+                    .body(EasebuzzPaymentResponse.failure(e.getMessage(), "INTERNAL_ERROR"));
         }
     }
 }

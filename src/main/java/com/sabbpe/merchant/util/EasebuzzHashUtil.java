@@ -77,7 +77,7 @@ public class EasebuzzHashUtil {
             String salt) {
         
         // Build hash string with exact format
-        // key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5|||||salt
+        // key|txnid|amount|productinfo|firstname|email|udf1|||||||||salt (5 empty fields)
         StringBuilder hashString = new StringBuilder();
         hashString.append(key != null ? key : "").append("|")
                   .append(txnid != null ? txnid : "").append("|")
@@ -90,7 +90,7 @@ public class EasebuzzHashUtil {
                   .append(udf3 != null ? udf3 : "").append("|")
                   .append(udf4 != null ? udf4 : "").append("|")
                   .append(udf5 != null ? udf5 : "").append("|")
-                  .append("||||") // Four empty fields (total 5 pipes between udf5 and salt)
+                  .append("|||||") // Five empty fields (total 6 pipes between udf5 and salt)
                   .append(salt != null ? salt : "");
         
         return generateSHA512(hashString.toString());
