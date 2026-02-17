@@ -2,8 +2,10 @@ package com.sabbpe.merchant.service;
 
 import com.sabbpe.merchant.dto.EasebuzzInitiateRequest;
 import com.sabbpe.merchant.dto.EasebuzzPaymentResponse;
+import com.sabbpe.merchant.dto.ErrorResponse;
 import com.sabbpe.merchant.exception.GatewayException;
 import com.sabbpe.merchant.util.HashGeneratorUtil;
+import com.sabbpe.merchant.util.EasebuzzErrorHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,6 +24,7 @@ public class EasebuzzService {
 
     private final RestTemplate restTemplate;
     private final HashGeneratorUtil hashGeneratorUtil;
+    private final EasebuzzErrorHandler errorHandler;
 
     @Value("${easebuzz.key}")
     private String easebuzzKey;
@@ -34,9 +37,11 @@ public class EasebuzzService {
 
     @Autowired
     public EasebuzzService(RestTemplate restTemplate,
-                           HashGeneratorUtil hashGeneratorUtil) {
+                           HashGeneratorUtil hashGeneratorUtil,
+                           EasebuzzErrorHandler errorHandler) {
         this.restTemplate = restTemplate;
         this.hashGeneratorUtil = hashGeneratorUtil;
+        this.errorHandler = errorHandler;
     }
 
     // ======================================================
@@ -94,10 +99,11 @@ public class EasebuzzService {
                 throw new GatewayException("Empty response from Easebuzz gateway");
             }
 
-            return parseEasebuzzResponse(response.getBody());
+            // Parse response with transaction ID for better error tracking
+            return parseEasebuzzResponse(response.getBody(), request.getTxnid());
 
         } catch (RestClientException ex) {
-            log.error("Easebuzz communication error", ex);
+            log.error("Easebuzz communication error for TxnId: {}", request.getTxnid(), ex);
             throw new GatewayException("Gateway communication failed", ex);
         }
     }
@@ -150,34 +156,48 @@ public class EasebuzzService {
     // RESPONSE PARSER
     // ======================================================
 
+    /**
+     * Parse Easebuzz response and handle errors gracefully.
+     * For errors (including duplicates), throws GatewayException with error details.
+     * The controller should catch this and return appropriate error response.
+     */
     private EasebuzzPaymentResponse parseEasebuzzResponse(
-            Map<String, Object> responseBody) {
+            Map<String, Object> responseBody,
+            String transactionId) {
 
-        int status = extractStatus(responseBody.get("status"));
+        int status = errorHandler.extractStatus(responseBody.get("status"));
 
         // ---------------- SUCCESS ----------------
         if (status == 1) {
-
             String data = (String) responseBody.get("data");
 
             if (data == null || data.isBlank()) {
-                throw new GatewayException("Payment initiated but no reference received");
+                String errorMsg = "Payment initiated but no reference received";
+                log.error("Easebuzz error - TxnId: {}, Error: {}", transactionId, errorMsg);
+                throw new GatewayException(errorMsg);
             }
 
-            log.info("Payment initiated successfully. Reference={}", data);
-
+            log.info("Easebuzz payment initiated successfully. TxnId={}, Reference={}", 
+                    transactionId, data);
             return new EasebuzzPaymentResponse(status, data);
         }
 
         // ---------------- FAILURE ----------------
-        String error = (String) responseBody.get("error_desc");
-        if (error == null) {
-            error = (String) responseBody.get("error");
-        }
+        // Use error handler to parse and categorize the error
+        ErrorResponse errorResponse = errorHandler.handleEasebuzzError(responseBody, transactionId);
+        
+        // Log detailed error information with transaction ID for traceability
+        log.error("Easebuzz payment initiation failed. TxnId: {}, ErrorType: {}, Message: {}, ErrorCode: {}, Details: {}",
+                transactionId,
+                errorResponse.getErrorType(),
+                errorResponse.getMessage(),
+                errorResponse.getErrorCode(),
+                errorResponse.getDetails());
 
-        log.error("Easebuzz failure. status={}, error={}", status, error);
-
-        throw new GatewayException("Easebuzz payment initiation failed: " + error);
+        // Throw exception with error response so controller can handle it
+        GatewayException ex = new GatewayException(errorResponse.getMessage());
+        ex.setErrorResponse(errorResponse);  // Attach error response for controller
+        throw ex;
     }
 
     private int extractStatus(Object statusObj) {
