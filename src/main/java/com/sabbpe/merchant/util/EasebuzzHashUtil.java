@@ -97,6 +97,77 @@ public class EasebuzzHashUtil {
     }
 
     /**
+     * Generate reverse hash for callback verification with UDF fields (UDF1-UDF10)
+     * 
+     * Format for reverse hash with full UDF support (callback):
+     * salt|status|udf10|udf9|udf8|udf7|udf6|udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key
+     * 
+     * @param salt Salt key
+     * @param status Payment status from gateway
+     * @param udf10 UDF field 10
+     * @param udf9 UDF field 9
+     * @param udf8 UDF field 8
+     * @param udf7 UDF field 7
+     * @param udf6 UDF field 6
+     * @param udf5 UDF field 5
+     * @param udf4 UDF field 4
+     * @param udf3 UDF field 3
+     * @param udf2 UDF field 2
+     * @param udf1 UDF field 1
+     * @param email Email
+     * @param firstname First name
+     * @param productinfo Product info
+     * @param amount Amount
+     * @param txnid Transaction ID
+     * @param key Merchant key
+     * @return SHA-512 hash
+     */
+    public static String generateReverseHashWithUDF(
+            String salt,
+            String status,
+            String udf10,
+            String udf9,
+            String udf8,
+            String udf7,
+            String udf6,
+            String udf5,
+            String udf4,
+            String udf3,
+            String udf2,
+            String udf1,
+            String email,
+            String firstname,
+            String productinfo,
+            String amount,
+            String txnid,
+            String key) {
+        
+        // Build reverse hash string with all UDF fields
+        // Format: salt|status|udf10|udf9|udf8|udf7|udf6|udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key
+        StringBuilder reverseHashString = new StringBuilder();
+        reverseHashString.append(salt != null ? salt : "").append("|")
+                         .append(status != null ? status : "").append("|")
+                         .append(udf10 != null ? udf10 : "").append("|")
+                         .append(udf9 != null ? udf9 : "").append("|")
+                         .append(udf8 != null ? udf8 : "").append("|")
+                         .append(udf7 != null ? udf7 : "").append("|")
+                         .append(udf6 != null ? udf6 : "").append("|")
+                         .append(udf5 != null ? udf5 : "").append("|")
+                         .append(udf4 != null ? udf4 : "").append("|")
+                         .append(udf3 != null ? udf3 : "").append("|")
+                         .append(udf2 != null ? udf2 : "").append("|")
+                         .append(udf1 != null ? udf1 : "").append("|")
+                         .append(email != null ? email : "").append("|")
+                         .append(firstname != null ? firstname : "").append("|")
+                         .append(productinfo != null ? productinfo : "").append("|")
+                         .append(amount != null ? amount : "").append("|")
+                         .append(txnid != null ? txnid : "").append("|")
+                         .append(key != null ? key : "");
+        
+        return generateSHA512(reverseHashString.toString());
+    }
+
+    /**
      * Generate reverse hash for callback verification
      * 
      * Format for reverse hash (callback):

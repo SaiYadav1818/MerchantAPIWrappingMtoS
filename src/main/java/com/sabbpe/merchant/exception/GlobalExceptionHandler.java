@@ -137,6 +137,61 @@ public class GlobalExceptionHandler {
                 .body(response);
     }
 
+    // ========================================
+    // NEW EXCEPTION HANDLERS FOR PAYMENT MODULE
+    // ========================================
+
+    @ExceptionHandler(TransactionNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleTransactionNotFound(
+            TransactionNotFoundException ex, WebRequest request) {
+
+        logger.warn("Transaction not found: {}", ex.getMessage());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "FAILURE");
+        response.put("errorCode", "TRANSACTION_NOT_FOUND");
+        response.put("message", ex.getMessage());
+        response.put("timestamp", System.currentTimeMillis());
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(response);
+    }
+
+    @ExceptionHandler(MerchantNotActiveException.class)
+    public ResponseEntity<Map<String, Object>> handleMerchantNotActive(
+            MerchantNotActiveException ex, WebRequest request) {
+
+        logger.warn("Merchant not active: {}", ex.getMessage());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "FAILURE");
+        response.put("errorCode", "MERCHANT_NOT_ACTIVE");
+        response.put("message", ex.getMessage());
+        response.put("timestamp", System.currentTimeMillis());
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(response);
+    }
+
+    @ExceptionHandler(PaymentProcessingException.class)
+    public ResponseEntity<Map<String, Object>> handlePaymentProcessing(
+            PaymentProcessingException ex, WebRequest request) {
+
+        logger.error("Payment processing error: {}", ex.getMessage());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "FAILURE");
+        response.put("errorCode", "PAYMENT_PROCESSING_ERROR");
+        response.put("message", ex.getMessage());
+        response.put("timestamp", System.currentTimeMillis());
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(response);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(
             RuntimeException ex, WebRequest request) {
