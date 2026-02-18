@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
     Optional<Transaction> findByOrderId(String orderId);
     Optional<Transaction> findByInternalToken(String internalToken);
+    Optional<Transaction> findByTxnId(String txnId);
 }

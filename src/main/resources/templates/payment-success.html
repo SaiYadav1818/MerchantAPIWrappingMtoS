@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment Success</title>
+    <title>Payment Success - Merchant API</title>
     <style>
         * {
             margin: 0;
@@ -12,211 +12,443 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+                sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             padding: 20px;
         }
 
         .container {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
             max-width: 900px;
             width: 100%;
+        }
+
+        /* ============================================================
+           SUCCESS HEADER SECTION
+           ============================================================ */
+        .success-header {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
             padding: 40px;
-            animation: slideIn 0.5s ease-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .header {
+            border-radius: 16px 16px 0 0;
             text-align: center;
-            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .success-icon {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 20px;
-            background: #4CAF50;
+            font-size: 60px;
+            margin-bottom: 20px;
+            animation: scaleIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes scaleIn {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .success-header h1 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .success-header p {
+            font-size: 16px;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+
+        /* ============================================================
+           MAIN CONTENT CARD
+           ============================================================ */
+        .card {
+            background: white;
+            border-radius: 0 0 16px 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+
+        /* ============================================================
+           TRANSACTION SUMMARY SECTION
+           ============================================================ */
+        .summary-section {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 40px;
+            border-left: 6px solid #11998e;
+        }
+
+        .summary-section h2 {
+            color: #11998e;
+            font-size: 20px;
+            margin-bottom: 25px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+
+        .summary-section h2::before {
+            content: "✓";
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: #11998e;
+            color: white;
             border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 12px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+        }
+
+        .summary-item {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .summary-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .summary-item-label {
+            color: #666;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .summary-item-value {
+            color: #1a1a1a;
+            font-size: 18px;
+            font-weight: 700;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+        }
+
+        .summary-item-value.amount {
+            color: #11998e;
+            font-size: 24px;
+        }
+
+        /* ============================================================
+           FULL RESPONSE TABLE SECTION
+           ============================================================ */
+        .response-section {
+            margin-top: 40px;
+        }
+
+        .response-section h2 {
+            color: #1a1a1a;
+            font-size: 22px;
+            margin-bottom: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+        }
+
+        .response-section h2::before {
+            content: "📋";
+            margin-right: 12px;
+            font-size: 24px;
+        }
+
+        /* ============================================================
+           RESPONSE TABLE
+           ============================================================ */
+        .response-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .response-table thead {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        .response-table th {
+            padding: 16px 20px;
+            text-align: left;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .response-table th:first-child {
+            border-radius: 10px 0 0 0;
+        }
+
+        .response-table th:last-child {
+            border-radius: 0 10px 0 0;
+        }
+
+        .response-table tbody tr {
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s ease;
+        }
+
+        .response-table tbody tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        .response-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .response-table td {
+            padding: 16px 20px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .response-table td:first-child {
+            font-weight: 600;
+            color: #555;
+            background: #f9f9f9;
+            font-family: 'Courier New', monospace;
+            width: 35%;
+        }
+
+        .response-table td:last-child {
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            color: #666;
+        }
+
+        /* ============================================================
+           HIGHLIGHT IMPORTANT FIELDS
+           ============================================================ */
+        .row-highlight td:first-child {
+            background: #e8f5e9 !important;
+            color: #1b5e20 !important;
+            font-weight: 700;
+            border-left: 4px solid #11998e;
+            padding-left: 16px;
+        }
+
+        .row-highlight:hover {
+            background-color: #f1f8f6 !important;
+        }
+
+        .row-highlight td:first-child::before {
+            content: "⭐ ";
+            color: #ffd700;
+            margin-right: 6px;
+        }
+
+        /* ============================================================
+           SECURITY BADGE
+           ============================================================ */
+        .security-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-radius: 10px;
+            border-left: 6px solid #11998e;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .security-badge {
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 40px;
+            width: 50px;
+            height: 50px;
+            background: #11998e;
+            border-radius: 50%;
             color: white;
+            font-size: 28px;
+            font-weight: bold;
         }
 
-        .success-icon::before {
-            content: "✓";
+        .security-text h3 {
+            color: #1b5e20;
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 5px;
         }
 
-        h1 {
-            color: #333;
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-
-        .subtitle {
-            color: #666;
-            font-size: 1.1em;
-            margin-bottom: 30px;
-        }
-
-        .response-section {
-            background: #f8f9fa;
-            border-left: 4px solid #4CAF50;
-            padding: 20px;
-            border-radius: 5px;
-            margin-bottom: 30px;
-        }
-
-        .response-section h3 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 1.3em;
-        }
-
-        .parameters-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-
-        .parameters-table thead {
-            background: #667eea;
-            color: white;
-        }
-
-        .parameters-table th,
-        .parameters-table td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        .parameters-table tbody tr:hover {
-            background: #f5f5f5;
-            transition: background 0.2s ease;
-        }
-
-        .parameters-table tbody tr:nth-child(even) {
-            background: #fafafa;
-        }
-
-        .parameters-table th {
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-
-        .key-column {
-            font-weight: 600;
-            color: #667eea;
-            width: 30%;
-            word-break: break-word;
-        }
-
-        .value-column {
-            color: #555;
-            word-break: break-word;
-        }
-
-        .transaction-id {
-            background: #e8f5e9;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .transaction-id strong {
+        .security-text p {
             color: #2e7d32;
-            font-size: 1.1em;
+            font-size: 13px;
+            margin: 0;
         }
 
+        /* ============================================================
+           SUSPICIOUS ACTIVITY ALERT
+           ============================================================ */
+        .suspicious-alert {
+            margin-top: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border-radius: 10px;
+            border-left: 6px solid #ff9800;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .suspicious-icon {
+            font-size: 32px;
+            margin-top: 2px;
+        }
+
+        .suspicious-text h3 {
+            color: #e65100;
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .suspicious-text p {
+            color: #bf360c;
+            font-size: 13px;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        /* ============================================================
+           ACTION BUTTONS
+           ============================================================ */
         .action-buttons {
             display: flex;
             gap: 15px;
+            margin-top: 40px;
             justify-content: center;
-            margin-top: 30px;
         }
 
         .btn {
-            padding: 12px 30px;
-            font-size: 1em;
+            padding: 14px 32px;
             border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
+            border-radius: 8px;
+            font-size: 16px;
             font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .btn-primary {
-            background: #667eea;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
             color: white;
+            box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3);
         }
 
         .btn-primary:hover {
-            background: #5568d3;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 6px 20px rgba(17, 153, 142, 0.4);
         }
 
         .btn-secondary {
-            background: #f0f0f0;
-            color: #333;
-            border: 1px solid #ddd;
+            background: white;
+            color: #11998e;
+            border: 2px solid #11998e;
         }
 
         .btn-secondary:hover {
-            background: #e0e0e0;
+            background: #f0f0f0;
             transform: translateY(-2px);
         }
 
+        /* ============================================================
+           FOOTER
+           ============================================================ */
         .footer {
+            margin-top: 40px;
             text-align: center;
             color: #999;
-            font-size: 0.9em;
-            margin-top: 30px;
+            font-size: 13px;
             padding-top: 20px;
-            border-top: 1px solid #e0e0e0;
+            border-top: 1px solid #f0f0f0;
         }
 
-        .no-data-message {
-            text-align: center;
-            color: #999;
-            padding: 20px;
-            font-size: 1.1em;
+        .footer a {
+            color: #11998e;
+            text-decoration: none;
+            font-weight: 600;
         }
 
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* ============================================================
+           RESPONSIVE DESIGN
+           ============================================================ */
         @media (max-width: 768px) {
-            .container {
+            .success-header {
+                padding: 30px 20px;
+            }
+
+            .success-header h1 {
+                font-size: 28px;
+            }
+
+            .card {
                 padding: 20px;
             }
 
-            h1 {
-                font-size: 1.8em;
+            .summary-grid {
+                grid-template-columns: 1fr;
             }
 
-            .parameters-table th,
-            .parameters-table td {
-                padding: 8px 10px;
-                font-size: 0.9em;
+            .summary-section h2 {
+                font-size: 18px;
+            }
+
+            .response-section h2 {
+                font-size: 18px;
+            }
+
+            .response-table th,
+            .response-table td {
+                padding: 12px 15px;
+                font-size: 12px;
+            }
+
+            .response-table td:first-child {
+                width: 40%;
             }
 
             .action-buttons {
@@ -225,56 +457,178 @@
 
             .btn {
                 width: 100%;
+                justify-content: center;
             }
+
+            .security-section {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .suspicious-alert {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        /* ============================================================
+           EMPTY STATE
+           ============================================================ */
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .no-data-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <div class="success-icon"></div>
-            <h1 th:text="${title}">Payment Successful</h1>
-            <p class="subtitle">Your payment has been processed successfully</p>
+        <!-- ============================================================
+             SUCCESS HEADER
+             ============================================================ -->
+        <div class="success-header">
+            <div class="success-icon">✓</div>
+            <h1>Payment Successful!</h1>
+            <p>Your payment has been processed successfully</p>
         </div>
 
-        <div th:if="${!paymentData.isEmpty()}" class="transaction-id">
-            <p>
-                <strong>Transaction ID:</strong>
-                <span th:text="${paymentData.get('txnid') ?: 'N/A'}"></span>
-            </p>
-        </div>
+        <div class="card">
+            <!-- ============================================================
+                 TRANSACTION SUMMARY SECTION
+                 ============================================================ -->
+            <div class="summary-section" th:if="${paymentData != null}">
+                <h2>Transaction Summary</h2>
+                <div class="summary-grid">
+                    <div class="summary-item" th:if="${#strings.isNotEmpty(paymentData.get('txnid'))}">
+                        <div class="summary-item-label">Transaction ID</div>
+                        <div class="summary-item-value" th:text="${paymentData.get('txnid')}"></div>
+                    </div>
+                    
+                    <div class="summary-item" th:if="${#strings.isNotEmpty(paymentData.get('status'))}">
+                        <div class="summary-item-label">Status</div>
+                        <div class="summary-item-value" th:text="${paymentData.get('status')}"></div>
+                    </div>
+                    
+                    <div class="summary-item" th:if="${#strings.isNotEmpty(paymentData.get('amount'))}">
+                        <div class="summary-item-label">Amount</div>
+                        <div class="summary-item-value amount" th:text="'₹ ' + ${paymentData.get('amount')}"></div>
+                    </div>
+                    
+                    <div class="summary-item" th:if="${#strings.isNotEmpty(paymentData.get('firstname'))}">
+                        <div class="summary-item-label">Customer Name</div>
+                        <div class="summary-item-value" th:text="${paymentData.get('firstname')}"></div>
+                    </div>
+                    
+                    <div class="summary-item" th:if="${#strings.isNotEmpty(paymentData.get('email'))}">
+                        <div class="summary-item-label">Email</div>
+                        <div class="summary-item-value" th:text="${paymentData.get('email')}"></div>
+                    </div>
+                    
+                    <div class="summary-item" th:if="${#strings.isNotEmpty(paymentData.get('phone'))}">
+                        <div class="summary-item-label">Phone</div>
+                        <div class="summary-item-value" th:text="${paymentData.get('phone')}"></div>
+                    </div>
+                    
+                    <div class="summary-item" th:if="${#strings.isNotEmpty(paymentData.get('bank_ref_num'))}">
+                        <div class="summary-item-label">Bank Reference</div>
+                        <div class="summary-item-value" th:text="${paymentData.get('bank_ref_num')}"></div>
+                    </div>
+                    
+                    <div class="summary-item" th:if="${#strings.isNotEmpty(paymentData.get('mode'))}">
+                        <div class="summary-item-label">Payment Mode</div>
+                        <div class="summary-item-value" th:text="${paymentData.get('mode')}"></div>
+                    </div>
+                    
+                    <div class="summary-item" th:if="${#strings.isNotEmpty(paymentData.get('easepayid'))}">
+                        <div class="summary-item-label">Gateway ID</div>
+                        <div class="summary-item-value" th:text="${paymentData.get('easepayid')}"></div>
+                    </div>
+                </div>
+            </div>
 
-        <div class="response-section">
-            <h3>Payment Response Details</h3>
-            <div th:if="${!paymentData.isEmpty()}">
-                <table class="parameters-table">
+            <!-- ============================================================
+                 SECURITY VERIFICATION BADGE
+                 ============================================================ -->
+            <div class="security-section" th:if="${hashVerified == true}">
+                <div class="security-badge">✓</div>
+                <div class="security-text">
+                    <h3>Payment Verified</h3>
+                    <p>This payment has been verified and is secure. Hash validation passed.</p>
+                </div>
+            </div>
+
+            <!-- ============================================================
+                 SUSPICIOUS ACTIVITY ALERT
+                 ============================================================ -->
+            <div class="suspicious-alert" th:if="${suspiciousActivity == true}">
+                <div class="suspicious-icon">⚠️</div>
+                <div class="suspicious-text">
+                    <h3>Suspicious Activity Detected</h3>
+                    <p th:text="${message != null ? message : 'There was an issue verifying this payment. Please contact support immediately.'}"></p>
+                </div>
+            </div>
+
+            <!-- ============================================================
+                 FULL PAYMENT RESPONSE TABLE
+                 ============================================================ -->
+            <div class="response-section" th:if="${paymentData != null and paymentData.size() > 0}">
+                <h2>Full Payment Response</h2>
+                
+                <table class="response-table">
                     <thead>
                         <tr>
-                            <th>Parameter</th>
+                            <th>Field Name</th>
                             <th>Value</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr th:each="entry : ${paymentData}">
-                            <td class="key-column" th:text="${entry.key}">Key</td>
-                            <td class="value-column" th:text="${entry.value ?: 'N/A'}">Value</td>
+                        <tr th:each="entry : ${paymentData}"
+                            th:if="${#strings.isNotEmpty(entry.value)}"
+                            th:classappend="${
+                                entry.key.toLowerCase().contains('status') or
+                                entry.key.toLowerCase().contains('txnid') or
+                                entry.key.toLowerCase().contains('amount') or
+                                entry.key.toLowerCase().contains('bank_ref_num') or
+                                entry.key.toLowerCase().contains('easepayid') or
+                                entry.key.toLowerCase().contains('hash')
+                                ? 'row-highlight' : ''
+                            }">
+                            <td th:text="${entry.key}"></td>
+                            <td th:text="${entry.value}"></td>
                         </tr>
                     </tbody>
                 </table>
-            </div>
-            <div th:if="${paymentData.isEmpty()}" class="no-data-message">
-                <p>No payment data received</p>
-            </div>
-        </div>
 
-        <div class="action-buttons">
-            <a href="/" class="btn btn-primary">Return to Home</a>
-            <button class="btn btn-secondary" onclick="window.print()">Print Receipt</button>
-        </div>
+                <div class="no-data" th:if="${#lists.isEmpty(paymentData)}">
+                    <div class="no-data-icon">📊</div>
+                    <p>No payment data available</p>
+                </div>
+            </div>
 
-        <div class="footer">
-            <p>&copy; 2024 Payment Gateway. All rights reserved.</p>
-            <p>Thank you for your transaction!</p>
+            <!-- ============================================================
+                 ACTION BUTTONS
+                 ============================================================ -->
+            <div class="action-buttons">
+                <a href="/" class="btn btn-primary">
+                    ← Back to Home
+                </a>
+                <a href="/orders" class="btn btn-secondary">
+                    View Orders
+                </a>
+            </div>
+
+            <!-- ============================================================
+                 FOOTER
+                 ============================================================ -->
+            <div class="footer">
+                <p>Payment processed by Easebuzz Payment Gateway</p>
+                <p>For support, contact: <a href="mailto:support@example.com">support@example.com</a></p>
+            </div>
         </div>
     </div>
 </body>
